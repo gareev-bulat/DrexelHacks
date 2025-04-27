@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import SentimentAnalysis from "@/components/SentimentAnalysis"
 
 // Mock portfolio data
 const portfolioData = [
@@ -173,6 +174,341 @@ const newsSources = [
     impact: "positive",
     stocks: ["TSLA"],
   },
+]
+
+// Mock Reddit posts data
+const redditPosts = [
+  // January 2024
+  {
+    title: "Apple's Vision Pro pre-orders exceed expectations",
+    content: "Initial pre-order numbers for Apple's Vision Pro are breaking records, showing strong consumer interest.",
+    company: "AAPL",
+    date: "2024-01-15"
+  },
+  {
+    title: "Microsoft's AI integration in Windows 12",
+    content: "Early preview of Windows 12 shows deep AI integration across the operating system.",
+    company: "MSFT",
+    date: "2024-01-20"
+  },
+  {
+    title: "Tesla's new factory in Mexico approved",
+    content: "Local government has given the green light for Tesla's new manufacturing facility.",
+    company: "TSLA",
+    date: "2024-01-25"
+  },
+  {
+    title: "Amazon's AWS continues to dominate cloud market",
+    content: "AWS maintains its lead in cloud computing with innovative new services.",
+    company: "AMZN",
+    date: "2024-01-30"
+  },
+  {
+    title: "Google's AI research breakthrough",
+    content: "New research paper shows significant advancements in AI capabilities.",
+    company: "GOOGL",
+    date: "2024-01-05"
+  },
+  {
+    title: "Meta's VR headset sales surge",
+    content: "Quest 3 sales exceed expectations during holiday season.",
+    company: "META",
+    date: "2024-01-10"
+  },
+  {
+    title: "NVIDIA's new AI chips announced",
+    content: "Next-generation AI processors promise significant performance improvements.",
+    company: "NVDA",
+    date: "2024-01-15"
+  },
+
+  // February 2024
+  {
+    title: "Apple's supply chain issues resolved",
+    content: "After months of delays, Apple has finally resolved its supply chain issues in China.",
+    company: "AAPL",
+    date: "2024-02-01"
+  },
+  {
+    title: "Microsoft's cloud growth slowing down",
+    content: "Recent earnings report shows slower than expected growth in Azure cloud services.",
+    company: "MSFT",
+    date: "2024-02-10"
+  },
+  {
+    title: "Tesla's Cybertruck production ramping up",
+    content: "Production numbers are increasing steadily at the Texas factory.",
+    company: "TSLA",
+    date: "2024-02-15"
+  },
+  {
+    title: "Amazon's drone delivery expansion",
+    content: "Company announces plans to expand drone delivery to more cities.",
+    company: "AMZN",
+    date: "2024-02-20"
+  },
+  {
+    title: "Google's search algorithm update",
+    content: "Latest update improves search results quality significantly.",
+    company: "GOOGL",
+    date: "2024-02-25"
+  },
+  {
+    title: "Meta's new AI features for Instagram",
+    content: "Instagram introduces AI-powered content creation tools.",
+    company: "META",
+    date: "2024-02-05"
+  },
+  {
+    title: "NVIDIA's gaming revenue exceeds expectations",
+    content: "Strong demand for gaming GPUs drives record revenue.",
+    company: "NVDA",
+    date: "2024-02-15"
+  },
+
+  // March 2024
+  {
+    title: "Apple's new AI features are game-changing",
+    content: "The new AI capabilities in iOS 18 are truly revolutionary. The integration with Siri and other apps is seamless.",
+    company: "AAPL",
+    date: "2024-03-01"
+  },
+  {
+    title: "Microsoft's new AI tools impress developers",
+    content: "The new AI development tools from Microsoft are receiving positive feedback from the developer community.",
+    company: "MSFT",
+    date: "2024-03-15"
+  },
+  {
+    title: "Tesla's battery technology breakthrough",
+    content: "New battery design promises longer range and faster charging.",
+    company: "TSLA",
+    date: "2024-03-20"
+  },
+  {
+    title: "Amazon's new fulfillment center opens",
+    content: "State-of-the-art facility promises faster delivery times.",
+    company: "AMZN",
+    date: "2024-03-10"
+  },
+  {
+    title: "Google's Pixel phone sales surge",
+    content: "Strong demand for the latest Pixel models.",
+    company: "GOOGL",
+    date: "2024-03-25"
+  },
+  {
+    title: "Meta's new VR social platform",
+    content: "Company announces innovative social VR experience.",
+    company: "META",
+    date: "2024-03-05"
+  },
+  {
+    title: "NVIDIA's data center growth",
+    content: "Data center revenue continues to show strong growth.",
+    company: "NVDA",
+    date: "2024-03-15"
+  },
+
+  // April 2024
+  {
+    title: "Apple's Vision Pro sales below expectations",
+    content: "Initial sales of the Vision Pro headset have been disappointing according to recent reports.",
+    company: "AAPL",
+    date: "2024-04-05"
+  },
+  {
+    title: "Microsoft's gaming division shows strong growth",
+    content: "Xbox and gaming services continue to show impressive growth numbers.",
+    company: "MSFT",
+    date: "2024-04-15"
+  },
+  {
+    title: "Tesla's new factory construction delayed",
+    content: "Construction of the new Mexico factory faces unexpected delays due to regulatory issues.",
+    company: "TSLA",
+    date: "2024-04-25"
+  },
+
+  // May 2024
+  {
+    title: "Apple's new MacBook Pro with M3 chip announced",
+    content: "New MacBook Pro models with M3 chip show significant performance improvements.",
+    company: "AAPL",
+    date: "2024-05-10"
+  },
+  {
+    title: "Microsoft's Surface Pro 10 receives mixed reviews",
+    content: "New Surface Pro model criticized for high price and minimal upgrades.",
+    company: "MSFT",
+    date: "2024-05-20"
+  },
+  {
+    title: "Tesla's self-driving software update causes controversy",
+    content: "Latest FSD update receives mixed feedback from users and safety advocates.",
+    company: "TSLA",
+    date: "2024-05-30"
+  },
+
+  // June 2024
+  {
+    title: "Apple's WWDC 2024 announces major iOS updates",
+    content: "iOS 18 brings revolutionary AI features and improved privacy controls.",
+    company: "AAPL",
+    date: "2024-06-10"
+  },
+  {
+    title: "Microsoft's AI Copilot expands to more products",
+    content: "AI assistant now available across entire Microsoft 365 suite.",
+    company: "MSFT",
+    date: "2024-06-20"
+  },
+  {
+    title: "Tesla's new Model 3 refresh receives positive reviews",
+    content: "Updated Model 3 design and features impress critics and customers.",
+    company: "TSLA",
+    date: "2024-06-25"
+  },
+
+  // July 2024
+  {
+    title: "Apple's services revenue hits new record",
+    content: "Apple's services division shows strong growth in Q3 2024.",
+    company: "AAPL",
+    date: "2024-07-05"
+  },
+  {
+    title: "Microsoft's cloud services face outage",
+    content: "Major Azure outage affects multiple regions for several hours.",
+    company: "MSFT",
+    date: "2024-07-15"
+  },
+  {
+    title: "Tesla's new factory in Texas reaches full capacity",
+    content: "Gigafactory Texas now producing at maximum capacity.",
+    company: "TSLA",
+    date: "2024-07-25"
+  },
+
+  // August 2024
+  {
+    title: "Apple's iPhone 16 rumors heat up",
+    content: "Leaked information suggests major camera improvements in upcoming iPhone.",
+    company: "AAPL",
+    date: "2024-08-10"
+  },
+  {
+    title: "Microsoft's Windows 12 release date announced",
+    content: "Next version of Windows to launch in early 2025 with AI focus.",
+    company: "MSFT",
+    date: "2024-08-20"
+  },
+  {
+    title: "Tesla's new energy storage product launch",
+    content: "New Powerwall 3 with improved capacity and efficiency announced.",
+    company: "TSLA",
+    date: "2024-08-30"
+  },
+
+  // September 2024
+  {
+    title: "Apple's iPhone 16 launch event",
+    content: "New iPhone models with advanced AI features and improved cameras unveiled.",
+    company: "AAPL",
+    date: "2024-09-10"
+  },
+  {
+    title: "Microsoft's new AI research breakthrough",
+    content: "Company announces significant advancement in natural language processing.",
+    company: "MSFT",
+    date: "2024-09-20"
+  },
+  {
+    title: "Tesla's new factory in India approved",
+    content: "Government approves Tesla's plans for manufacturing facility in India.",
+    company: "TSLA",
+    date: "2024-09-25"
+  },
+
+  // October 2024
+  {
+    title: "Apple's Vision Pro sales rebound",
+    content: "Sales of Vision Pro headset show strong growth after price adjustments.",
+    company: "AAPL",
+    date: "2024-10-05"
+  },
+  {
+    title: "Microsoft's gaming division acquisition",
+    content: "Company announces acquisition of major game studio.",
+    company: "MSFT",
+    date: "2024-10-15"
+  },
+  {
+    title: "Tesla's new factory construction begins",
+    content: "Groundbreaking ceremony held for new Indian manufacturing facility.",
+    company: "TSLA",
+    date: "2024-10-25"
+  },
+
+  // November 2024
+  {
+    title: "Apple's holiday sales projections",
+    content: "Company expects record holiday quarter with new product lineup.",
+    company: "AAPL",
+    date: "2024-11-10"
+  },
+  {
+    title: "Microsoft's cloud services growth accelerates",
+    content: "Azure shows strong growth in enterprise adoption.",
+    company: "MSFT",
+    date: "2024-11-20"
+  },
+  {
+    title: "Tesla's new vehicle announcement",
+    content: "Company teases new affordable EV model for 2025.",
+    company: "TSLA",
+    date: "2024-11-30"
+  },
+
+  // December 2024
+  {
+    title: "Apple's year-end review",
+    content: "Company reports strong performance across all product categories.",
+    company: "AAPL",
+    date: "2024-12-15"
+  },
+  {
+    title: "Microsoft's AI integration success",
+    content: "Company reports positive feedback on AI features across products.",
+    company: "MSFT",
+    date: "2024-12-20"
+  },
+  {
+    title: "Tesla's production milestone",
+    content: "Company celebrates production of 5 millionth vehicle.",
+    company: "TSLA",
+    date: "2024-12-25"
+  },
+
+  // January 2025
+  {
+    title: "Apple's Vision Pro 2 rumors",
+    content: "Early reports suggest significant improvements in next-gen headset.",
+    company: "AAPL",
+    date: "2025-01-10"
+  },
+  {
+    title: "Microsoft's Windows 12 launch",
+    content: "New operating system with advanced AI features now available.",
+    company: "MSFT",
+    date: "2025-01-20"
+  },
+  {
+    title: "Tesla's new factory progress",
+    content: "Indian manufacturing facility construction ahead of schedule.",
+    company: "TSLA",
+    date: "2025-01-25"
+  }
 ]
 
 // Calculate total portfolio value
@@ -378,6 +714,8 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
+
+          <SentimentAnalysis posts={redditPosts} />
 
           <Card className="shadow-sm mb-8">
             <CardHeader className="bg-gray-50 border-b">
