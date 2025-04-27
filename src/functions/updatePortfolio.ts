@@ -54,11 +54,11 @@ export async function updatePortfolio(): Promise<UpdateResult> {
     };
   }
 
-  const alpacaBaseUrl = 'https://paper-api.alpaca.markets/v2';
+  const alpacaBaseUrl = 'https://data.alpaca.markets/v2';
   const alpacaHeaders = {
     'APCA-API-KEY-ID': alpacaKey,
     'APCA-API-SECRET-KEY': alpacaSecret,
-    'Content-Type': 'application/json'
+    accept: 'application/json'
   };
 
   const ai = new GoogleGenAI({ apiKey: geminiKey });
@@ -66,7 +66,7 @@ export async function updatePortfolio(): Promise<UpdateResult> {
   
   try {
     // Fetch current portfolio
-    const portfolioResponse = await fetch(`${alpacaBaseUrl}/positions`, {
+    const portfolioResponse = await fetch(`https://paper-api.alpaca.markets/v2/positions`, {
       headers: alpacaHeaders
     });
     
@@ -86,7 +86,7 @@ export async function updatePortfolio(): Promise<UpdateResult> {
     }, {} as PortfolioMap);
 
     // Get recommendations from Gemini AI
-    const recommendations = await getAIRecommendations(ai);
+    const recommendations = await getAIRecommendations(ai, portfolioMap);
     
     // Execute trades based on recommendations
     for (const recommendation of recommendations) {
@@ -117,20 +117,29 @@ export async function updatePortfolio(): Promise<UpdateResult> {
   }
 }
 
-async function getAIRecommendations(ai: GoogleGenAI): Promise<StockRecommendation[]> {
+async function getAIRecommendations(ai: GoogleGenAI, portfolioMap: any): Promise<StockRecommendation[]> {
+  console.log(portfolioMap)
   const geminiPrompt = `
-You are a highly skilled AI financial analyst tasked with analyzing today's major financial news and providing stock recommendations. Your analysis should be comprehensive, covering a wide range of news sources and affected stocks. Make sure to gather relevant information from reputable financial news websites and other credible sources.
+YOU ONLY THINK ABOUT CRYPTO THO!
+You are a highly skilled AI financial analyst tasked with analyzing today's major financial news and providing crypto recommendations. Your analysis should be comprehensive, covering a wide range of news sources and affected cryptos. Make sure to gather relevant information from reputable financial news websites and other credible sources.
 Follow these steps to complete your task:
 1. Search for today's major financial news from reputable sources.
-2. Identify a large number of stock tickers significantly impacted by the news.
+2. Identify a large number of crypto tickers significantly impacted by the news.
 3. For each identified ticker:
    a. Categorize it as "buy", "hold", or "sell" based on your analysis.
    b. Gather information from web sources to support your categorization, and provide a concise but informative reasoning based on the gathered data. Include the URLs of the sources used in the reasoning.
-Your final output must be a valid JSON array with the following structure:
-\`\`\`json
+
+   Here's your existing portfolio:
+   ${portfolioMap}
+
+   HAVE A VARIETY IN YOUR ANSWER CATEGORIES, LEAN TOWARDS BUY AND SELL.
+
+   DO NOT OUTPUT ANY OTHER TEXT, MARKDOWN, JSON TICKS, EXPLAINATIONS. DO NOT HALLUCINATE.
+
+   Your final output must be a valid array that can be parsed into JSON with the following structure:
 [
   {
-    "ticker": "<stock_ticker>",
+    "ticker": "<crypto_ticker>",
     "recommendation": "<buy|hold|sell>",
     "reasoning": "<brief_reasoning>",
     "sources": [
@@ -141,7 +150,7 @@ Your final output must be a valid JSON array with the following structure:
   },
   ...
 ]
-\`\`\``;
+`
 
   try {
     const response = await ai.models.generateContent({
@@ -154,6 +163,8 @@ Your final output must be a valid JSON array with the following structure:
     }
 
     const recommendationsText = response.text;
+
+    console.log(response.text)
     
     // Extract JSON content from the response
     const jsonStartIndex = recommendationsText.indexOf('[');
@@ -219,22 +230,32 @@ async function handleSellRecommendation(
   // Only sell if we actually own the stock
   if (portfolioMap[symbol] && portfolioMap[symbol].quantity > 0) {
     try {
-      const sellResponse = await fetch(`${alpacaBaseUrl}/orders`, {
+      const url = `https://paper-api.alpaca.markets/v2/orders`;
+      const options = {
         method: 'POST',
-        headers: alpacaHeaders,
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          ...alpacaHeaders
+        },
         body: JSON.stringify({
-          symbol,
+          type: 'market',
+          time_in_force: 'gtc',
+          symbol: symbol + "/USD",
           qty: portfolioMap[symbol].quantity,
           side: 'sell',
-          type: 'market',
-          time_in_force: 'day'
+          limit_price: '2100' // Replace with the actual limit price logic if needed
         })
-      });
+      };
+
+      const sellResponse = await fetch(url, options);
       
       if (!sellResponse.ok) {
         const errorData = await sellResponse.json().catch(() => ({}));
         throw new Error(`Failed to place sell order: ${sellResponse.status} ${sellResponse.statusText} ${JSON.stringify(errorData)}`);
       }
+      
+      console.log(`Successfully sold ${portfolioMap[symbol].quantity} shares of ${symbol}.`);
       
       const orderResult = await sellResponse.json();
       transactions.push({
@@ -261,7 +282,7 @@ async function handleBuyRecommendation(
 ): Promise<void> {
   try {
     // Get account information to determine buying power
-    const accountResponse = await fetch(`${alpacaBaseUrl}/account`, {
+    const accountResponse = await fetch(`https://paper-api.alpaca.markets/v2/account`, {
       headers: alpacaHeaders
     });
     
@@ -278,7 +299,9 @@ async function handleBuyRecommendation(
     }
     
     // Get current stock price
-    const quoteResponse = await fetch(`${alpacaBaseUrl}/v2/stocks/${symbol}/trades/latest`, {
+    const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]; // Get yesterday's date in YYYY-MM-DD format
+    const quoteResponse = await fetch(`https://data.alpaca.markets/v1beta3/crypto/us/bars?symbols=${symbol+"/USD"}&timeframe=1Day&start=${yesterday}&end=${today}&limit=1000&sort=asc`, {
       headers: alpacaHeaders
     });
     console.log(quoteResponse)
@@ -286,10 +309,11 @@ async function handleBuyRecommendation(
       throw new Error(`Failed to fetch quote for ${symbol}: ${quoteResponse.status} ${quoteResponse.statusText}`);
     }
     
-    const quote = await quoteResponse.json();
+    const quote = (await quoteResponse.json()).bars[symbol + "/USD"][0]
     
+    console.log("quote", quote)
     // Use ask price if available, otherwise bid price
-    const currentPrice = quote.quote.ap || quote.quote.bp;
+    const currentPrice = quote.c
     
     if (!currentPrice || currentPrice <= 0) {
       throw new Error(`Invalid price for ${symbol}: ${currentPrice}`);
@@ -304,16 +328,28 @@ async function handleBuyRecommendation(
       return;
     }
     
+    console.log("got pass having enough money")
+    console.log(JSON.stringify({
+      symbol: symbol + "/USD",
+      qty: sharesToBuy,
+      side: 'buy',
+      type: 'market',
+      time_in_force: 'gtc'
+    }))
     // Place buy order
-    const buyResponse = await fetch(`${alpacaBaseUrl}/orders`, {
+    const buyResponse = await fetch(`https://paper-api.alpaca.markets/v2/orders`, {
       method: 'POST',
-      headers: alpacaHeaders,
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        ...alpacaHeaders
+      },
       body: JSON.stringify({
-        symbol,
+        symbol: symbol + "/USD",
         qty: sharesToBuy,
         side: 'buy',
         type: 'market',
-        time_in_force: 'day'
+        time_in_force: 'gtc'
       })
     });
     
@@ -321,6 +357,8 @@ async function handleBuyRecommendation(
       const errorData = await buyResponse.json().catch(() => ({}));
       throw new Error(`Failed to place buy order: ${buyResponse.status} ${buyResponse.statusText} ${JSON.stringify(errorData)}`);
     }
+
+    console.log(`Successfully bought ${sharesToBuy} shares of ${symbol}.`);
     
     const orderResult = await buyResponse.json();
     transactions.push({
