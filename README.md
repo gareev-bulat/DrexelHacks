@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Inspiration
+Our project started not in a boardroom but over coffee, snacks, and lots of frustration. It was impossible to keep pace with the financial news: one day the headlines shout crash, the next shout rally.
 
-## Getting Started
+One of our colleagues joked, "I wish something would just read all this and tell me what to do!"
+We giggled — and then caught on: why not?
 
-First, run the development server:
+That flame fueled the blaze.
+We wanted to build an AI that reads the latest news, gets the sentiment, and gives instant, unambiguous advice: buy, sell, or hold. No small talk. No second-guessing. Just do it.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+A missed opportunity, some frustration, and lots of curiosity became something we're excited to bring to the world. 
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What it does
+HeadlineTrader is an AI-powered portfolio manager that scans incoming financial news headlines in real time, extracts actionable trading signals, and automatically executes buy, sell, or hold orders on your behalf. With a single button press, users benefit from:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's next for HeadlineTrader
+Looking ahead, we see several avenues to evolve HeadlineTrader into a robust platform. We plan to roll out a paper-trading mode so users can refine strategies without risking capital, and create a marketplace where third-party quants can offer custom signal models that users subscribe to. On the product side, we aim to launch native iOS and Android apps for on-the-go monitoring and push notifications when market-moving headlines break. Finally, we’ll integrate back-testing tools and performance attribution reports, empowering users to analyze which news sources and AI models drive the most alpha in their portfolios.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
