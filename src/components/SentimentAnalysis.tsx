@@ -186,13 +186,11 @@ const SentimentAnalysis: React.FC<SentimentAnalysisProps> = ({ posts }) => {
 
   return (
     <div className="mt-12 space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold mb-3">Sentiment Analysis</h2>
-        <p className="text-muted-foreground">Track market sentiment trends across different companies</p>
-      </div>
-
       <div className="space-y-6">
-        <h3 className="text-2xl font-bold">Investment Decisions</h3>
+        <div className="space-y-1">
+            <h3 className="text-2xl font-bold">Investment Decisions</h3>
+            <p className="text-muted-foreground">AI-powered analysis and recommendations based on sentiment trends, market signals, and confidence levels for each stock in your portfolio.</p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {decisions.map((decision) => (
             <Card key={decision.company} className="p-6">
@@ -245,12 +243,12 @@ const SentimentAnalysis: React.FC<SentimentAnalysisProps> = ({ posts }) => {
       </div>
       
       <div className="space-y-6">
-        <div>
-          <h3 className="text-2xl font-bold mb-3">Sentiment Trends</h3>
+        <div className="space-y-1">
+          <h3 className="text-2xl font-bold">Sentiment Trends</h3>
           <p className="text-muted-foreground">Year-long sentiment analysis based on social media and news data</p>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {sentimentData.map((data) => (
             <Card key={data.company} className="py-0 gap-0 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="p-6 pb-4 bg-gray-50 border-b">
@@ -272,7 +270,7 @@ const SentimentAnalysis: React.FC<SentimentAnalysisProps> = ({ posts }) => {
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="h-[200px]">
+                <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={data.data}

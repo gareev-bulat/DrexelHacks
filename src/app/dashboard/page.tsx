@@ -525,8 +525,45 @@ const performanceData = portfolioData[0].history.map((entry, index) => {
   }
 })
 
-export default function Dashboard() {
+// Add sentiment analysis data type and mock data
+interface IndustryTrend {
+  title: string
+  description: string
+  impact: string
+  date: string
+}
 
+interface SentimentAnalysisData {
+  industryTrends: IndustryTrend[]
+}
+
+const sentimentAnalysisData: SentimentAnalysisData = {
+  industryTrends: [
+    {
+      title: "Tech Sector Growth",
+      description: "Technology sector showing strong growth with AI and cloud computing leading the charge.",
+      impact: "Positive",
+      date: "2024-04-27"
+    },
+    {
+      title: "EV Market Expansion",
+      description: "Electric vehicle market continues to expand with new players entering the space.",
+      impact: "Positive",
+      date: "2024-04-26"
+    },
+    {
+      title: "Supply Chain Challenges",
+      description: "Global supply chain issues affecting tech manufacturing.",
+      impact: "Negative",
+      date: "2024-04-25"
+    }
+  ]
+}
+
+type Section = "overview" | "news" | "sentiment"
+
+export default function Dashboard() {
+  const [activeSection, setActiveSection] = useState<Section>("overview")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [showAnalysisComplete, setShowAnalysisComplete] = useState(false)
 
@@ -550,23 +587,46 @@ export default function Dashboard() {
       <header className="sticky top-0 z-10 border-b bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-              <BarChart3 className="h-6 w-6 text-green-600" />
-              <span>StockSense</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-muted-foreground">Portfolio Value</div>
-              <div className="text-xl font-bold">${totalPortfolioValue.toFixed(2)}</div>
-              <div className="text-sm text-green-600 flex items-center">
-                <ArrowUp className="mr-1 h-3 w-3" />
-                <span>5.2%</span>
-              </div>
-              <a href="/auth/logout" className="ml-4">
-                <Button variant="outline" size="sm">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
+            <div className="flex gap-12">
+              <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+                <BarChart3 className="h-6 w-6 text-green-600" />
+                <span>StockSense</span>
+              </Link>
+
+              <div className="flex gap-2">
+                <Button
+                  variant={activeSection === "overview" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveSection("overview")}
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Overview
                 </Button>
-              </a>
+                <Button
+                  variant={activeSection === "sentiment" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveSection("sentiment")}
+                >
+                  <Zap className="mr-2 h-4 w-4" />
+                  Sentiment
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground">Portfolio Value</div>
+                <div className="text-xl font-bold">${totalPortfolioValue.toFixed(2)}</div>
+                <div className="text-sm text-green-600 flex items-center">
+                  <ArrowUp className="mr-1 h-3 w-3" />
+                  <span>5.2%</span>
+                </div>
+                <a href="/auth/logout" className="ml-4">
+                  <Button variant="outline" size="sm">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -584,223 +644,168 @@ export default function Dashboard() {
             </Alert>
           )}
 
-          <div className="mb-12 text-center bg-white border rounded-xl py-10 space-y-2 flex flex-col items-center">
-            <h2 className="text-2xl font-bold flex items-center">
-              Analyze the current news and let Gemini AI automatically update your portfolio
-            </h2>
-            <div className="text-sm mb-4 ">Experience the power of Gemini AI as it intelligently analyzes the web and optimizes your stock trades.</div>
-            <Button
-              onClick={handleReanalyze}
-              disabled={isAnalyzing}
-              size="lg"
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 text-lg shadow-lg"
-            >
-              {isAnalyzing ? (
-                <>
-                  <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                  Analyzing Market Dynamics...
-                </>
-              ) : (
-                <>
-                  <Zap className="mr-2 h-5 w-5" />
-                  Reupdate Portfolio from News
-                </>
-              )}
-            </Button>
-            <div className="text-sm text-muted-foreground ">Last reupdated: 4/27/25 - 12:32am</div>
-          </div>
-
-          <div className="mb-12">
-            <div className="flex mb-6 flex-col items-start">
-              <h2 className="text-2xl font-bold flex items-center">
-                <TrendingUp className="mr-2 h-5 w-5 text-green-600" />
-                Portfolio Overview
-              </h2>
-              <div className="text-muted-foreground text-sm">A comprehensive summary of the performance of your owned stocks and the overall health of your investment portfolio.</div>
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {portfolioData.map((stock) => (
-                <Card key={stock.symbol} className="py-0 gap-0 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <CardHeader className="p-4 pb-0 bg-gray-50 border-b">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-xl">{stock.symbol}</CardTitle>
-                        <CardDescription className="text-xs">{stock.name}</CardDescription>
-                      </div>
-                      <div
-                        className={`text-sm flex items-center ${stock.change >= 0 ? "text-green-600" : "text-red-600"}`}
-                      >
-                        {stock.change >= 0 ? (
-                          <ArrowUp className="mr-1 h-3 w-3" />
-                        ) : (
-                          <ArrowDown className="mr-1 h-3 w-3" />
-                        )}
-                        <span>{stock.changePercent}%</span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="text-sm text-muted-foreground">{stock.shares} shares</div>
-                      <div className="text-lg font-semibold">${stock.currentPrice}</div>
-                    </div>
-                    <div className="h-[100px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={stock.history}>
-                          <Line
-                            type="monotone"
-                            dataKey="price"
-                            stroke={stock.change >= 0 ? "#16a34a" : "#dc2626"}
-                            strokeWidth={2}
-                            dot={false}
-                          />
-                          <YAxis domain={["auto", "auto"]} hide />
-                          <XAxis dataKey="date" hide />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-2 text-sm font-medium">Value: ${stock.value.toFixed(2)}</div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-12">
-            <div className="flex mb-6 flex-col items-start">
-              <h2 className="text-2xl font-bold flex items-center">
-                <Newspaper className="mr-2 h-5 w-5 text-green-600" />
-                Latest News Sources
-              </h2>
-              <div className="text-muted-foreground text-sm">Sources utilized by Gemini AI today to inform its stock purchases.</div>
-            </div>
-
-            <Card className="shadow-sm py-0 rounded-3xl">
-              <CardContent className="p-6 pr-0">
-                <ScrollArea className="w-full whitespace-nowrap relative">
-                  <div className="absolute inset-y-0 right-0 w-1/12 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
-                  <div className="flex space-x-4">
-                    {newsSources.map((news) => (
-                      <Card
-                        key={news.id}
-                        className="w-[350px] p-0 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow gap-0"
-                      >
-                        <div className="rounded-t-xl bg-gray-50 border-b p-4">
-                          <div className="text-base font-semibold line-clamp-2">{news.title}</div>
-                        </div>
-                        <CardContent className="p-4 flex flex-col gap-2">
-                          <div className="text-sm text-muted-foreground">
-                            {news.source} • {news.date}
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="flex gap-2 flex-wrap">
-                              {news.stocks.map((stock) => (
-                                <Badge key={stock} variant="secondary">
-                                  {stock}
-                                </Badge>
-                              ))}
-                            </div>
-                            <Badge
-                                variant="outline"
-                                className={
-                                  news.impact === "positive"
-                                    ? "bg-green-50 text-green-700 border-green-200 whitespace-nowrap flex-shrink-0"
-                                    : "bg-red-50 text-red-700 border-red-200 whitespace-nowrap flex-shrink-0"
-                                }
-                              >
-                                {news.impact === "positive" ? "Positive" : "Negative"}
-                              </Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-
-          <SentimentAnalysis posts={redditPosts} />
-
-          <Card className="shadow-sm mb-8 py-0">
-            <CardHeader className="bg-gray-50 border-b p-6 rounded-t-xl">
-              <CardTitle>Portfolio Performance</CardTitle>
-              <CardDescription>Trend of overall portfolio value over time</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => {
-                        const date = new Date(value)
-                        return `${date.getMonth() + 1}/${date.getFullYear().toString().substr(-2)}`
-                      }}
-                    />
-                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(value) => `$${value.toLocaleString()}`} />
-                    <Tooltip
-                      formatter={(value) => [`$${value.toLocaleString()}`, "Portfolio Value"]}
-                      labelFormatter={(label) => {
-                        const date = new Date(label)
-                        return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="portfolioValue"
-                      name="Portfolio Value"
-                      stroke="#16a34a"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+          {activeSection === "overview" && (
+            <>
+              <div className="mb-12 text-center bg-white border rounded-xl py-10 space-y-2 flex flex-col items-center">
+                <h2 className="text-2xl font-bold flex items-center">
+                  Analyze the current news and let Gemini AI automatically update your portfolio
+                </h2>
+                <div className="text-sm mb-4">Experience the power of Gemini AI as it intelligently analyzes the web and optimizes your stock trades.</div>
+                <Button
+                  onClick={handleReanalyze}
+                  disabled={isAnalyzing}
+                  size="lg"
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 text-lg shadow-lg"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                      Analyzing Market Dynamics...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="mr-2 h-5 w-5" />
+                      Reupdate Portfolio from News
+                    </>
+                  )}
+                </Button>
+                <div className="text-sm text-muted-foreground">Last reupdated: 4/27/25 - 12:32am</div>
               </div>
-            </CardContent>
-          </Card>
 
-          <div className="mb-12">
-            <div className="flex mb-6 flex-col items-start">
-              <h2 className="text-2xl font-bold flex items-center">
-                <Newspaper className="mr-2 h-5 w-5 text-green-600" />
-                Latest News Sources
-              </h2>
-              <div className="text-muted-foreground text-sm">Sources utilized by Gemini AI today to inform its stock purchases.</div>
-            </div>
+              <div className="mb-12">
+                <div className="flex mb-6 flex-col items-start">
+                  <h2 className="text-2xl font-bold flex items-center">
+                    <TrendingUp className="mr-2 h-5 w-5 text-green-600" />
+                    Portfolio Overview
+                  </h2>
+                  <div className="text-muted-foreground text-sm">A comprehensive summary of the performance of your owned stocks and the overall health of your investment portfolio.</div>
+                </div>
 
-            <Card className="shadow-sm py-0 rounded-3xl">
-              <CardContent className="p-6 pr-0">
-                <ScrollArea className="w-full whitespace-nowrap relative px-2">
-                  <div className="absolute inset-y-0 right-0 w-1/12 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
-                  <div className="flex space-x-4">
-                    {newsSources.map((news) => (
-                      <Card
-                        key={news.id}
-                        className="w-[350px] p-0 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow gap-0"
-                      >
-                        <div className="rounded-t-xl bg-gray-50 border-b p-4">
-                          <div className="text-base font-semibold line-clamp-2">{news.title}</div>
-                        </div>
-                        <CardContent className="p-4 flex flex-col gap-2">
-                          <div className="text-sm text-muted-foreground">
-                            {news.source} • {news.date}
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {portfolioData.map((stock) => (
+                    <Card key={stock.symbol} className="py-0 gap-0 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      <CardHeader className="p-4 pb-0 bg-gray-50 border-b">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="text-xl">{stock.symbol}</CardTitle>
+                            <CardDescription className="text-xs">{stock.name}</CardDescription>
                           </div>
-                          <div className="flex gap-2">
-                            <div className="flex gap-2 flex-wrap">
-                              {news.stocks.map((stock) => (
-                                <Badge key={stock} variant="secondary">
-                                  {stock}
-                                </Badge>
-                              ))}
+                          <div
+                            className={`text-sm flex items-center ${stock.change >= 0 ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {stock.change >= 0 ? (
+                              <ArrowUp className="mr-1 h-3 w-3" />
+                            ) : (
+                              <ArrowDown className="mr-1 h-3 w-3" />
+                            )}
+                            <span>{stock.changePercent}%</span>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="text-sm text-muted-foreground">{stock.shares} shares</div>
+                          <div className="text-lg font-semibold">${stock.currentPrice}</div>
+                        </div>
+                        <div className="h-[100px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={stock.history}>
+                              <Line
+                                type="monotone"
+                                dataKey="price"
+                                stroke={stock.change >= 0 ? "#16a34a" : "#dc2626"}
+                                strokeWidth={2}
+                                dot={false}
+                              />
+                              <YAxis domain={["auto", "auto"]} hide />
+                              <XAxis dataKey="date" hide />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="mt-2 text-sm font-medium">Value: ${stock.value.toFixed(2)}</div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              <Card className="shadow-sm mb-8 py-0">
+                <CardHeader className="bg-gray-50 border-b p-6 rounded-t-xl">
+                  <CardTitle>Portfolio Performance</CardTitle>
+                  <CardDescription>Trend of overall portfolio value over time</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={performanceData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => {
+                            const date = new Date(value)
+                            return `${date.getMonth() + 1}/${date.getFullYear().toString().substr(-2)}`
+                          }}
+                        />
+                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(value) => `$${value.toLocaleString()}`} />
+                        <Tooltip
+                          formatter={(value) => [`$${value.toLocaleString()}`, "Portfolio Value"]}
+                          labelFormatter={(label) => {
+                            const date = new Date(label)
+                            return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                          }}
+                        />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="portfolioValue"
+                          name="Portfolio Value"
+                          stroke="#16a34a"
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 5 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="mb-12">
+              <div className="flex mb-6 flex-col items-start">
+                <h2 className="text-2xl font-bold flex items-center">
+                  <Newspaper className="mr-2 h-5 w-5 text-green-600" />
+                  Latest News Sources
+                </h2>
+                <div className="text-muted-foreground text-sm">Sources utilized by Gemini AI today to inform its stock purchases.</div>
+              </div>
+
+              <Card className="shadow-sm py-0 rounded-3xl">
+                <CardContent className="p-6 pr-0">
+                  <ScrollArea className="w-full whitespace-nowrap relative">
+                    <div className="absolute inset-y-0 right-0 w-1/12 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
+                    <div className="flex space-x-4">
+                      {newsSources.map((news) => (
+                        <Card
+                          key={news.id}
+                          className="w-[350px] p-0 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow gap-0"
+                        >
+                          <div className="rounded-t-xl bg-gray-50 border-b p-4">
+                            <div className="text-base font-semibold line-clamp-2">{news.title}</div>
+                          </div>
+                          <CardContent className="p-4 flex flex-col gap-2">
+                            <div className="text-sm text-muted-foreground">
+                              {news.source} • {news.date}
                             </div>
-                            <Badge
+                            <div className="flex gap-2">
+                              <div className="flex gap-2 flex-wrap">
+                                {news.stocks.map((stock) => (
+                                  <Badge key={stock} variant="secondary">
+                                    {stock}
+                                  </Badge>
+                                ))}
+                              </div>
+                              <Badge
                                 variant="outline"
                                 className={
                                   news.impact === "positive"
@@ -810,16 +815,24 @@ export default function Dashboard() {
                               >
                                 {news.impact === "positive" ? "Positive" : "Negative"}
                               </Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+            </>
+          )}
+
+          {activeSection === "sentiment" && (
+            <div className="mb-12">
+              <SentimentAnalysis posts={redditPosts} />
+            </div>
+          )}
         </div>
       </main>
 
@@ -827,8 +840,11 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 font-bold text-lg mb-4 md:mb-0">
+              <BarChart3 className="h-6 w-6 text-green-600" />
+              <span>StockSense</span>
             </div>
             <div className="text-sm text-muted-foreground">
+              © 2024 StockSense. All rights reserved.
             </div>
           </div>
         </div>
