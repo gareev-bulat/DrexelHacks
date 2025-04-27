@@ -13,6 +13,26 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import SentimentAnalysis from "@/components/SentimentAnalysis"
 import { fetchAllCompanyPosts } from '@/lib/reddit'
 import { fetchNewsArticles } from '@/lib/gemini'
+import { fetchPositions } from "@/functions/fetchPositions"
+import { updatePortfolio } from "@/functions/updatePortfolio"
+
+
+export type TPortfolioData = {
+  symbol: string;
+  name: string;
+  shares: number;
+  avgPrice: number;
+  currentPrice: number;
+  change: number;
+  changePercent: number;
+  value: number;
+  history: Array<{
+    date: string;
+    price: number;
+  }>;
+  assetClass: string,
+
+}
 
 interface StockData {
   symbol: string
@@ -26,8 +46,15 @@ interface StockData {
   history: { date: string; price: number }[]
 }
 
-interface NewsSource {
-  id: number
+interface RedditPost {
+  title: string
+  content: string
+  company: string
+  date: string
+}
+
+interface TNewsSource {
+  id?: number
   title: string
   source: string
   date: string
@@ -38,177 +65,6 @@ interface NewsSource {
   importance?: number
   relatedArticles?: string[]
 }
-
-interface RedditPost {
-  title: string
-  content: string
-  company: string
-  date: string
-}
-
-// Mock portfolio data
-const portfolioData: StockData[] = [
-  {
-    symbol: "AAPL",
-    name: "Apple Inc.",
-    shares: 15,
-    avgPrice: 145.32,
-    currentPrice: 178.61,
-    change: 2.34,
-    changePercent: 1.33,
-    value: 2679.15,
-    history: [
-      { date: "2023-01-01", price: 130.21 },
-      { date: "2023-02-01", price: 143.8 },
-      { date: "2023-03-01", price: 151.03 },
-      { date: "2023-04-01", price: 165.21 },
-      { date: "2023-05-01", price: 173.57 },
-      { date: "2023-06-01", price: 180.95 },
-      { date: "2023-07-01", price: 175.84 },
-      { date: "2023-08-01", price: 178.61 },
-    ],
-  },
-  {
-    symbol: "MSFT",
-    name: "Microsoft Corporation",
-    shares: 10,
-    avgPrice: 240.11,
-    currentPrice: 337.94,
-    change: -1.23,
-    changePercent: -0.36,
-    value: 3379.4,
-    history: [
-      { date: "2023-01-01", price: 239.58 },
-      { date: "2023-02-01", price: 252.75 },
-      { date: "2023-03-01", price: 275.23 },
-      { date: "2023-04-01", price: 288.8 },
-      { date: "2023-05-01", price: 305.56 },
-      { date: "2023-06-01", price: 328.6 },
-      { date: "2023-07-01", price: 340.54 },
-      { date: "2023-08-01", price: 337.94 },
-    ],
-  },
-  {
-    symbol: "AMZN",
-    name: "Amazon.com Inc.",
-    shares: 8,
-    avgPrice: 102.53,
-    currentPrice: 138.12,
-    change: 1.87,
-    changePercent: 1.37,
-    value: 1104.96,
-    history: [
-      { date: "2023-01-01", price: 98.12 },
-      { date: "2023-02-01", price: 103.39 },
-      { date: "2023-03-01", price: 98.7 },
-      { date: "2023-04-01", price: 106.96 },
-      { date: "2023-05-01", price: 120.58 },
-      { date: "2023-06-01", price: 130.36 },
-      { date: "2023-07-01", price: 133.68 },
-      { date: "2023-08-01", price: 138.12 },
-    ],
-  },
-  {
-    symbol: "GOOGL",
-    name: "Alphabet Inc.",
-    shares: 12,
-    avgPrice: 95.44,
-    currentPrice: 129.66,
-    change: 0.78,
-    changePercent: 0.6,
-    value: 1555.92,
-    history: [
-      { date: "2023-01-01", price: 88.73 },
-      { date: "2023-02-01", price: 94.86 },
-      { date: "2023-03-01", price: 103.71 },
-      { date: "2023-04-01", price: 108.22 },
-      { date: "2023-05-01", price: 122.76 },
-      { date: "2023-06-01", price: 119.7 },
-      { date: "2023-07-01", price: 125.42 },
-      { date: "2023-08-01", price: 129.66 },
-    ],
-  },
-  {
-    symbol: "TSLA",
-    name: "Tesla, Inc.",
-    shares: 20,
-    avgPrice: 190.72,
-    currentPrice: 215.49,
-    change: -3.45,
-    changePercent: -1.58,
-    value: 4309.8,
-    history: [
-      { date: "2023-01-01", price: 113.06 },
-      { date: "2023-02-01", price: 189.98 },
-      { date: "2023-03-01", price: 207.46 },
-      { date: "2023-04-01", price: 160.31 },
-      { date: "2023-05-01", price: 203.93 },
-      { date: "2023-06-01", price: 261.77 },
-      { date: "2023-07-01", price: 274.43 },
-      { date: "2023-08-01", price: 215.49 },
-    ],
-  },
-]
-
-// Mock news sources
-const newsSources: NewsSource[] = [
-  {
-    id: 1,
-    title: "Tesla Announces New Battery Technology",
-    source: "TechCrunch",
-    date: "2023-08-15",
-    impact: "positive",
-    stocks: ["TSLA"],
-  },
-  {
-    id: 2,
-    title: "Apple's iPhone 15 Expected to Break Sales Records",
-    source: "Bloomberg",
-    date: "2023-08-14",
-    impact: "positive",
-    stocks: ["AAPL"],
-  },
-  {
-    id: 3,
-    title: "Microsoft Cloud Services Revenue Surges",
-    source: "Wall Street Journal",
-    date: "2023-08-12",
-    impact: "positive",
-    stocks: ["MSFT"],
-  },
-  {
-    id: 4,
-    title: "Amazon Faces New Antitrust Challenges",
-    source: "Reuters",
-    date: "2023-08-10",
-    impact: "negative",
-    stocks: ["AMZN"],
-  },
-  {
-    id: 5,
-    title: "Google's AI Advancements Impress Industry Experts",
-    source: "CNBC",
-    date: "2023-08-08",
-    impact: "positive",
-    stocks: ["GOOGL"],
-  },
-  {
-    id: 6,
-    title: "Apple Supplier Reports Strong Earnings",
-    source: "Financial Times",
-    date: "2023-08-07",
-    impact: "positive",
-    stocks: ["AAPL"],
-  },
-  {
-    id: 7,
-    title: "Tesla Expands Manufacturing in Asia",
-    source: "Bloomberg",
-    date: "2023-08-05",
-    impact: "positive",
-    stocks: ["TSLA"],
-  },
-]
 
 // Mock Reddit posts data
 const redditPosts: RedditPost[] = [
@@ -981,20 +837,6 @@ const redditPosts: RedditPost[] = [
   }
 ];
 
-// Calculate total portfolio value
-const totalPortfolioValue = portfolioData.reduce((total, stock) => total + stock.value, 0)
-
-// Prepare data for portfolio performance chart
-const performanceData = portfolioData[0].history.map((entry, index) => {
-  const portfolioValue = portfolioData.reduce((total, stock) => {
-    return total + stock.history[index].price * stock.shares
-  }, 0)
-  return {
-    name: entry.date,
-    portfolioValue: Number.parseFloat(portfolioValue.toFixed(2)),
-  }
-})
-
 // Add sentiment analysis data type and mock data
 interface IndustryTrend {
   title: string
@@ -1035,30 +877,65 @@ type SortOption = "date" | "importance" | "credibility" | "impact"
 type FilterOption = "all" | "positive" | "negative" | "neutral"
 
 export default function Dashboard() {
+  
   const [activeSection, setActiveSection] = useState<Section>("overview")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [showAnalysisComplete, setShowAnalysisComplete] = useState(false)
   const [redditPosts, setRedditPosts] = useState<RedditPost[]>([])
-  const [newsArticles, setNewsArticles] = useState<NewsSource[]>([])
+  const [newsArticles, setNewsArticles] = useState<TNewsSource[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [sortBy, setSortBy] = useState<SortOption>("date")
   const [filterBy, setFilterBy] = useState<FilterOption>("all")
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const handleReanalyze = () => {
-    setIsAnalyzing(true)
+  const handleReanalyze = async () => {
+    try {
+      setIsAnalyzing(true);
 
-    // Simulate analysis process
-    setTimeout(() => {
-      setIsAnalyzing(false)
-      setShowAnalysisComplete(true)
-
-      // Hide the alert after 5 seconds
-      setTimeout(() => {
-        setShowAnalysisComplete(false)
-      }, 5000)
-    }, 2500)
+      await updatePortfolio();
+      setIsAnalyzing(false);
+      setShowAnalysisComplete(true);
+    } catch (error) {
+      console.error('Error during portfolio update:', error);
+      setIsAnalyzing(false);
+    }
   }
+
+  const [newsSources, setNewsSources] = useState<TNewsSource[] | undefined>(undefined)
+  const [positions, setPositions] = useState<TPortfolioData[] | undefined>(undefined)
+  
+  const [totalPortfolioValue, setTotalPortfolioValue] = useState<number>()
+
+  const [performanceData, setPerformanceData] = useState<any>()
+  useEffect(() => {
+    // Prepare data for portfolio performance chart
+    if (positions) {
+      const performanceData = positions.map((stock) => {
+        return {
+          name: stock.history[stock.history.length - 1].date, // Assuming we want the last date for performance
+          portfolioValue: Number.parseFloat((stock.history.reduce((total, entry) => {
+            return total + entry.price * stock.shares;
+          }, 0)).toFixed(2)),
+        };
+      });
+      setPerformanceData(performanceData);
+    }
+  }, [positions]);
+
+
+  useEffect(() => {
+    const portfolioData = positions?.reduce((total, stock) => total + stock.value, 0)
+    setTotalPortfolioValue(portfolioData ?? 0)
+  }, [positions])
+
+  useEffect(() => {
+    const initialFetch = async () => {
+      const newPositions = await fetchPositions()
+      setPositions(newPositions);
+    };
+    initialFetch();
+  }, []);
+
 
   const handleSort = (option: SortOption) => {
     setSortBy(option)
@@ -1092,7 +969,7 @@ export default function Dashboard() {
           return (b.credibility || 0) - (a.credibility || 0)
         case "impact":
           const impactOrder = { positive: 3, neutral: 2, negative: 1 }
-          return impactOrder[b.impact] - impactOrder[a.impact]
+          return impactOrder[b.impact as keyof typeof impactOrder] - impactOrder[a.impact as keyof typeof impactOrder]
         default:
           return 0
       }
@@ -1159,7 +1036,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-sm text-muted-foreground">Portfolio Value</div>
-              <div className="text-xl font-bold">${totalPortfolioValue.toFixed(2)}</div>
+              <div className="text-xl font-bold">${totalPortfolioValue?.toFixed(2)}</div>
               <div className="text-sm text-emerald-500 flex items-center">
                 <ArrowUp className="mr-1 h-3 w-3" />
                 <span>5.2%</span>
@@ -1227,16 +1104,13 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {portfolioData.map((stock: StockData) => (
+                  {positions?.map((stock: StockData) => (
                     <Card key={stock.symbol} className="py-0 gap-0 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
                       <CardHeader className="p-6 pb-4 bg-gray-50 border-b">
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <CardTitle className="text-2xl font-bold tracking-tight">{stock.symbol}</CardTitle>
-                              <Badge variant="outline" className="text-xs font-medium bg-white">
-                                {stock.shares} shares
-                              </Badge>
                             </div>
                             <CardDescription className="text-sm text-gray-600">{stock.name}</CardDescription>
                           </div>
@@ -1250,13 +1124,15 @@ export default function Dashboard() {
                             ) : (
                               <ArrowDown className="h-4 w-4" />
                             )}
-                            <span>{Math.abs(stock.changePercent)}%</span>
+                            <span>{Math.abs(stock.changePercent).toFixed(4)}%</span>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent className="p-6">
                         <div className="flex justify-between items-center mb-4">
-                          <div className="text-sm text-muted-foreground">Current Price</div>
+                        <Badge variant="outline" className="text-xs font-medium bg-white">
+                          {stock.shares.toFixed(4)} shares
+                        </Badge>
                           <div className="text-xl font-bold">${stock.currentPrice}</div>
                         </div>
                         <div className="h-[100px] w-full">
@@ -1391,7 +1267,7 @@ export default function Dashboard() {
                                         </Badge>
                                       </div>
                                       <div className="flex gap-2 flex-wrap">
-                                        {news.stocks.map((stock) => (
+                                        {news.stocks.map((stock: string) => (
                                           <Badge key={stock} variant="secondary" className="hover:bg-gray-100 transition-colors">
                                             {stock}
                                           </Badge>
