@@ -999,8 +999,6 @@ export default function Dashboard() {
               <div className="text-sm text-muted-foreground">Portfolio Value</div>
               <div className="text-xl font-bold">${totalPortfolioValue?.toFixed(2)}</div>
               <div className="text-sm text-emerald-500 flex items-center">
-                <ArrowUp className="mr-1 h-3 w-3" />
-                <span>5.2%</span>
               </div>
               <a href="/auth/logout" className="ml-4">
                 <Button variant="outline" size="sm" className="hover:bg-emerald-50 transition-colors">

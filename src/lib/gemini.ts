@@ -77,7 +77,7 @@ export async function fetchNewsArticles(): Promise<NewsArticle[]> {
       return [];
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-04-17" });
 
     const prompt = `Generate 5 recent news articles about major tech companies (AAPL, MSFT, TSLA, AMZN, GOOGL).
     For each article, provide the following information in this exact format:

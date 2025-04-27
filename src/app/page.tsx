@@ -47,7 +47,7 @@ export default function LandingPage() {
               </div>
               <div className="hidden md:block">
                 <Image 
-                  src="/hero-image.jpg" 
+                  src="/StockSense_logo.png" 
                   alt="HeadlineTrader Hero Image" 
                   width={1200} 
                   height={600}
