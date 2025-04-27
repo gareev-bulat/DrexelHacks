@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <style>
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    @keyframes bar1 {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes bar2 {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes bar3 {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+      100% { transform: translateY(0); }
+    }
+    .pulse {
+      animation: pulse 2s ease-in-out infinite;
+      transform-origin: center;
+    }
+    .bar1 {
+      animation: bar1 1.5s ease-in-out infinite;
+    }
+    .bar2 {
+      animation: bar2 1.5s ease-in-out infinite 0.2s;
+    }
+    .bar3 {
+      animation: bar3 1.5s ease-in-out infinite 0.4s;
+    }
+  </style>
+  <g class="pulse">
+    <path d="M3 3v18h18"/>
+    <path class="bar1" d="M18 17V9"/>
+    <path class="bar2" d="M13 17V5"/>
+    <path class="bar3" d="M8 17v-3"/>
+  </g>
+</svg> 
