@@ -12,6 +12,11 @@ interface StockData {
   history: { date: string; price: number }[];
 }
 
+interface HistoryItem {
+  date: Date;
+  close: number;
+}
+
 export async function fetchStockData(symbols: string[]): Promise<StockData[]> {
   const stockData: StockData[] = [];
 
@@ -39,7 +44,7 @@ export async function fetchStockData(symbols: string[]): Promise<StockData[]> {
         change: change,
         changePercent: changePercent,
         value: currentPrice * shares,
-        history: history.map((item: any) => ({
+        history: history.map((item: HistoryItem) => ({
           date: item.date.toISOString().split('T')[0],
           price: item.close
         }))

@@ -1,4 +1,3 @@
-import connectDB from '@/lib/mongodb';
 import Portfolio from '@/models/Portfolio';
 
 const portfolioData = [
@@ -106,7 +105,6 @@ const portfolioData = [
 
 async function seed() {
   try {
-    await connectDB();
     await Portfolio.deleteMany({});
     await Portfolio.insertMany(portfolioData);
     console.log('Database seeded successfully');

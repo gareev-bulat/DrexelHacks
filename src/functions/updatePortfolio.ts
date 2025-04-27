@@ -117,7 +117,7 @@ export async function updatePortfolio(): Promise<UpdateResult> {
   }
 }
 
-async function getAIRecommendations(ai: GoogleGenAI, portfolioMap: any): Promise<StockRecommendation[]> {
+async function getAIRecommendations(ai: GoogleGenAI, portfolioMap: PortfolioMap): Promise<StockRecommendation[]> {
   console.log(portfolioMap)
   const geminiPrompt = `
 YOU ONLY THINK ABOUT CRYPTO THO!

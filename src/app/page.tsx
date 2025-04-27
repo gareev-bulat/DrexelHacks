@@ -1,9 +1,7 @@
 "use client"
-import Link from "next/link"
 import { ArrowRight, BarChart3, LineChart, Newspaper, Zap } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
+import Image from 'next/image'
 
 export default function LandingPage() {
   return (
@@ -48,10 +46,12 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="hidden md:block">
-                <img
-                  src="/StockSense_logo.png"
-                  alt="Portfolio Dashboard Preview"
-                  className="rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                <Image 
+                  src="/hero-image.jpg" 
+                  alt="HeadlineTrader Hero Image" 
+                  width={1200} 
+                  height={600}
+                  priority
                 />
               </div>
             </div>
@@ -61,7 +61,7 @@ export default function LandingPage() {
         {/* Features Section */}
         <section className="py-20">
           <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-3xl font-bold text-center mb-12">How StockSense Works</h2>
+            <h2 className="text-3xl font-bold text-center mb-12">How HeadlineTrader Works</h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="bg-white p-8 rounded-lg shadow-sm border hover:shadow-md transition-all duration-300 hover:-translate-y-1">
                 <div className="bg-emerald-50 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-6">
@@ -89,7 +89,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Performance Tracking</h3>
                 <p className="text-gray-600">
-                  Track your portfolio's performance over time and see how our AI-driven recommendations have improved
+                  Track your portfolio&apos;s performance over time and see how our AI-driven recommendations have improved
                   your returns.
                 </p>
               </div>
@@ -104,7 +104,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2 font-bold text-lg mb-4">
                 <BarChart3 className="h-5 w-5 text-emerald-500" />
-                <span>StockSense</span>
+                <span>HeadlineTrader</span>
               </div>
               <p className="text-sm text-gray-600">
                 AI-powered portfolio optimization based on real-time news analysis.
@@ -139,7 +139,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-sm text-gray-600">
-            © 2025 StockSense. All rights reserved. Market data provided for educational purposes only.
+            © 2025 HeadlineTrader. All rights reserved. Market data provided for educational purposes only.
           </div>
         </div>
       </footer>

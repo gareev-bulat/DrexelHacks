@@ -1,4 +1,3 @@
-import connectDB from '@/lib/mongodb';
 import News from '@/models/News';
 import Sentiment from 'sentiment';
 
@@ -12,7 +11,6 @@ export async function saveNewsWithSentiment(newsData: {
   publishedAt: Date;
 }) {
   try {
-    await connectDB();
     
     // Calculate sentiment
     const sentiment = analyzer.analyze(newsData.content).score;
@@ -35,7 +33,6 @@ export async function saveNewsWithSentiment(newsData: {
 
 export async function getNewsWithSentiment() {
   try {
-    await connectDB();
     
     // Get all news sorted by published date
     const news = await News.find()

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StockSense",
+  title: "HeadlineTrader",
   description: "AI-powered portfolio optimization based on real-time news analysis.",
   icons: {
     icon: "/icon.svg",

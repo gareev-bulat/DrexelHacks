@@ -1,34 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts';
 import Sentiment from 'sentiment';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { TrendingUp, AlertTriangle } from "lucide-react";
 
-interface SentimentAnalysisProps {
-  posts: Array<{
-    title: string;
-    content: string;
-    company: string;
-    date: string;
-  }>;
+interface Post {
+  title: string;
+  content: string;
+  company: string;
+  date: string;
 }
 
-interface SentimentData {
+interface SentimentAnalysisProps {
+  posts: Post[];
+}
+
+interface SentimentChartData {
+  date: string;
+  sentiment: number;
+  positive: number;
+  negative: number;
+  neutral: number;
+  rollingSentiment: number;
+  rollingPositive: number;
+  rollingNegative: number;
+  rollingNeutral: number;
+}
+
+interface CompanySentimentData {
   company: string;
-  data: Array<{
-    date: string;
-    sentiment: number;
-    positive: number;
-    negative: number;
-    neutral: number;
-    rollingSentiment: number;
-    rollingPositive: number;
-    rollingNegative: number;
-    rollingNeutral: number;
-  }>;
-  overallSentiment: 'positive' | 'negative' | 'neutral';
+  data: SentimentChartData[];
+  overallSentiment: "positive" | "negative" | "neutral";
 }
 
 interface SentimentDecision {
@@ -39,96 +43,132 @@ interface SentimentDecision {
   risk: string;
 }
 
+interface TooltipPayload {
+  value: number;
+  dataKey: string;
+  color: string;
+  name: string;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
 const SentimentAnalysis: React.FC<SentimentAnalysisProps> = ({ posts }) => {
-  const [sentimentData, setSentimentData] = useState<SentimentData[]>([]);
-  const sentiment = new Sentiment();
+  const [sentimentData, setSentimentData] = useState<CompanySentimentData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const sentimentAnalyzer = useMemo(() => new Sentiment(), []);
 
   useEffect(() => {
-    const analyzeSentiments = () => {
-      const companyData: { [key: string]: Array<{
-        date: string;
-        sentiment: number;
-        positive: number;
-        negative: number;
-        neutral: number;
-      }> } = {};
-
-      // Sort posts by date
-      const sortedPosts = [...posts].sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-
-      // Initialize data structure for each company
-      const companies = new Set(posts.map(post => post.company));
-      companies.forEach(company => {
-        companyData[company] = [];
-      });
-
-      // Process each post
-      sortedPosts.forEach(post => {
-        const text = `${post.title} ${post.content}`;
-        const result = sentiment.analyze(text);
+    const analyzeSentiments = async () => {
+      try {
+        setIsLoading(true);
+        const companyGroups = new Map<string, Post[]>();
         
-        const sentimentScore = result.score;
-        const sentimentType = sentimentScore > 0 ? 'positive' : sentimentScore < 0 ? 'negative' : 'neutral';
-
-        companyData[post.company].push({
-          date: post.date,
-          sentiment: sentimentScore,
-          positive: sentimentType === 'positive' ? 1 : 0,
-          negative: sentimentType === 'negative' ? 1 : 0,
-          neutral: sentimentType === 'neutral' ? 1 : 0
-        });
-      });
-
-      // Calculate rolling averages for each company
-      const processedData = Object.entries(companyData).map(([company, sentiments]) => {
-        // Calculate overall sentiment
-        const totalPositive = sentiments.reduce((sum, s) => sum + s.positive, 0);
-        const totalNegative = sentiments.reduce((sum, s) => sum + s.negative, 0);
-        const totalNeutral = sentiments.reduce((sum, s) => sum + s.neutral, 0);
-
-        const overallSentiment: 'positive' | 'negative' | 'neutral' = 
-          totalPositive > totalNegative && totalPositive > totalNeutral ? 'positive' :
-          totalNegative > totalPositive && totalNegative > totalNeutral ? 'negative' :
-          'neutral';
-
-        // Calculate rolling averages
-        const windowSize = 3; // 3-month rolling average
-        const processedSentiments = sentiments.map((sentiment, index) => {
-          const start = Math.max(0, index - windowSize + 1);
-          const end = index + 1;
-          const window = sentiments.slice(start, end);
-          
-          return {
-            ...sentiment,
-            rollingSentiment: window.reduce((sum, s) => sum + s.sentiment, 0) / window.length,
-            rollingPositive: window.reduce((sum, s) => sum + s.positive, 0) / window.length,
-            rollingNegative: window.reduce((sum, s) => sum + s.negative, 0) / window.length,
-            rollingNeutral: window.reduce((sum, s) => sum + s.neutral, 0) / window.length
-          };
+        posts.forEach(post => {
+          if (!companyGroups.has(post.company)) {
+            companyGroups.set(post.company, []);
+          }
+          companyGroups.get(post.company)?.push(post);
         });
 
-        return {
-          company,
-          data: processedSentiments,
-          overallSentiment
-        };
-      });
+        const newSentimentData: CompanySentimentData[] = [];
+        
+        for (const [company, companyPosts] of companyGroups) {
+          const sortedPosts = [...companyPosts].sort((a, b) => {
+            const dateA = a.date ? new Date(a.date).getTime() : 0;
+            const dateB = b.date ? new Date(b.date).getTime() : 0;
+            return dateA - dateB;
+          });
 
-      setSentimentData(processedData);
+          const sentimentData: SentimentChartData[] = [];
+          let rollingSentiment = 0;
+          let rollingPositive = 0;
+          let rollingNegative = 0;
+          let rollingNeutral = 0;
+          const windowSize = 5;
+
+          sortedPosts.forEach((post, index) => {
+            const text = `${post.title} ${post.content}`;
+            const result = sentimentAnalyzer.analyze(text);
+            
+            const sentimentScore = result.score;
+            const positiveCount = result.positive?.length ?? 0;
+            const negativeCount = result.negative?.length ?? 0;
+            const neutralCount = (result.tokens?.length ?? 0) - positiveCount - negativeCount;
+
+            rollingSentiment = (rollingSentiment * Math.min(index, windowSize) + sentimentScore) / 
+                             (Math.min(index, windowSize) + 1);
+            rollingPositive = (rollingPositive * Math.min(index, windowSize) + positiveCount) / 
+                            (Math.min(index, windowSize) + 1);
+            rollingNegative = (rollingNegative * Math.min(index, windowSize) + negativeCount) / 
+                            (Math.min(index, windowSize) + 1);
+            rollingNeutral = (rollingNeutral * Math.min(index, windowSize) + neutralCount) / 
+                           (Math.min(index, windowSize) + 1);
+
+            sentimentData.push({
+              date: post.date || new Date().toISOString(),
+              sentiment: sentimentScore,
+              positive: positiveCount,
+              negative: negativeCount,
+              neutral: neutralCount,
+              rollingSentiment,
+              rollingPositive,
+              rollingNegative,
+              rollingNeutral
+            });
+          });
+
+          const overallSentiment = rollingSentiment > 0 ? "positive" : 
+                                 rollingSentiment < 0 ? "negative" : "neutral";
+
+          newSentimentData.push({
+            company,
+            data: sentimentData,
+            overallSentiment
+          });
+        }
+
+        setSentimentData(newSentimentData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     analyzeSentiments();
-  }, [posts]);
+  }, [posts, sentimentAnalyzer]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
+    if (active && payload && payload.length && label) {
       const date = new Date(label);
-      const sentiment = payload.find((p: any) => p.name === 'Overall Sentiment')?.value;
-      const positive = payload.find((p: any) => p.name === 'Positive')?.value;
-      const negative = payload.find((p: any) => p.name === 'Negative')?.value;
-      const neutral = payload.find((p: any) => p.name === 'Neutral')?.value;
+      const sentiment = payload.find((p) => p.dataKey === 'rollingSentiment')?.value;
+      const positive = payload.find((p) => p.dataKey === 'rollingPositive')?.value;
+      const negative = payload.find((p) => p.dataKey === 'rollingNegative')?.value;
+      const neutral = payload.find((p) => p.dataKey === 'rollingNeutral')?.value;
 
       return (
         <div className="bg-white p-2 border rounded-md shadow-sm">
@@ -146,15 +186,15 @@ const SentimentAnalysis: React.FC<SentimentAnalysisProps> = ({ posts }) => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-emerald-600 text-xs">Positive:</span>
-              <span className="font-medium text-xs">{Math.round(positive * 100)}%</span>
+              <span className="font-medium text-xs">{Math.round((positive ?? 0) * 100)}%</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-red-600 text-xs">Negative:</span>
-              <span className="font-medium text-xs">{Math.round(negative * 100)}%</span>
+              <span className="font-medium text-xs">{Math.round((negative ?? 0) * 100)}%</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600 text-xs">Neutral:</span>
-              <span className="font-medium text-xs">{Math.round(neutral * 100)}%</span>
+              <span className="font-medium text-xs">{Math.round((neutral ?? 0) * 100)}%</span>
             </div>
           </div>
         </div>
@@ -163,7 +203,7 @@ const SentimentAnalysis: React.FC<SentimentAnalysisProps> = ({ posts }) => {
     return null;
   };
 
-  const analyzeDecisions = (data: SentimentData[]): SentimentDecision[] => {
+  const analyzeDecisions = (data: CompanySentimentData[]): SentimentDecision[] => {
     return data.map(companyData => {
       const latestData = companyData.data[companyData.data.length - 1];
       const previousData = companyData.data.length > 1 ? companyData.data[companyData.data.length - 2] : null;

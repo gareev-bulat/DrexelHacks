@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from "recharts"
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts"
 import { ArrowDown, ArrowUp, BarChart3, RefreshCw, Newspaper, Zap, TrendingUp, LogOut, Filter, ArrowUpDown, Star, Shield } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -11,9 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import SentimentAnalysis from "@/components/SentimentAnalysis"
-import { fetchAllCompanyPosts } from '@/lib/reddit'
 import { fetchNewsArticles } from '@/lib/gemini'
-import { fetchPositions } from "@/functions/fetchPositions"
 import { updatePortfolio } from "@/functions/updatePortfolio"
 
 
@@ -845,48 +843,28 @@ interface IndustryTrend {
   date: string
 }
 
-interface SentimentAnalysisData {
-  industryTrends: IndustryTrend[]
-}
-
-const sentimentAnalysisData: SentimentAnalysisData = {
-  industryTrends: [
-    {
-      title: "Tech Sector Growth",
-      description: "Technology sector showing strong growth with AI and cloud computing leading the charge.",
-      impact: "Positive",
-      date: "2024-04-27"
-    },
-    {
-      title: "EV Market Expansion",
-      description: "Electric vehicle market continues to expand with new players entering the space.",
-      impact: "Positive",
-      date: "2024-04-26"
-    },
-    {
-      title: "Supply Chain Challenges",
-      description: "Global supply chain issues affecting tech manufacturing.",
-      impact: "Negative",
-      date: "2024-04-25"
-    }
-  ]
-}
-
 type Section = "overview" | "sentiment"
 type SortOption = "date" | "importance" | "credibility" | "impact"
 type FilterOption = "all" | "positive" | "negative" | "neutral"
 
+interface PerformanceData {
+  date: string;
+  value: number;
+  change: number;
+}
+
 export default function Dashboard() {
-  
   const [activeSection, setActiveSection] = useState<Section>("overview")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [showAnalysisComplete, setShowAnalysisComplete] = useState(false)
-  const [redditPosts, setRedditPosts] = useState<RedditPost[]>([])
   const [newsArticles, setNewsArticles] = useState<TNewsSource[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [sortBy, setSortBy] = useState<SortOption>("date")
   const [filterBy, setFilterBy] = useState<FilterOption>("all")
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [positions, setPositions] = useState<TPortfolioData[] | undefined>(undefined)
+  const [totalPortfolioValue, setTotalPortfolioValue] = useState<number>()
+  const [performanceData, setPerformanceData] = useState<PerformanceData[]>([])
 
   const handleReanalyze = async () => {
     try {
@@ -901,27 +879,21 @@ export default function Dashboard() {
     }
   }
 
-  const [newsSources, setNewsSources] = useState<TNewsSource[] | undefined>(undefined)
-  const [positions, setPositions] = useState<TPortfolioData[] | undefined>(undefined)
-  
-  const [totalPortfolioValue, setTotalPortfolioValue] = useState<number>()
-
-  const [performanceData, setPerformanceData] = useState<any>()
   useEffect(() => {
     // Prepare data for portfolio performance chart
     if (positions) {
-      const performanceData = positions.map((stock) => {
+      const newPerformanceData = positions.map((stock) => {
         return {
-          name: stock.history[stock.history.length - 1].date, // Assuming we want the last date for performance
-          portfolioValue: Number.parseFloat((stock.history.reduce((total, entry) => {
+          date: stock.history[stock.history.length - 1].date,
+          value: Number.parseFloat((stock.history.reduce((total, entry) => {
             return total + entry.price * stock.shares;
           }, 0)).toFixed(2)),
+          change: stock.change
         };
       });
-      setPerformanceData(performanceData);
+      setPerformanceData(newPerformanceData);
     }
   }, [positions]);
-
 
   useEffect(() => {
     const portfolioData = positions?.reduce((total, stock) => total + stock.value, 0)
@@ -930,12 +902,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     const initialFetch = async () => {
-      const newPositions = await fetchPositions()
-      setPositions(newPositions);
+      try {
+        const [articles] = await Promise.all([
+          fetchNewsArticles()
+        ]);
+        setNewsArticles(articles);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
+
     initialFetch();
   }, []);
-
 
   const handleSort = (option: SortOption) => {
     setSortBy(option)
@@ -975,25 +955,6 @@ export default function Dashboard() {
       }
     })
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [posts, articles] = await Promise.all([
-          fetchAllCompanyPosts(),
-          fetchNewsArticles()
-        ]);
-        setRedditPosts(posts);
-        setNewsArticles(articles);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadData();
-  }, []);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -1010,7 +971,7 @@ export default function Dashboard() {
             <div className="flex gap-12">
               <Link href="/" className="flex items-center gap-2 font-bold text-xl hover:opacity-80 transition-opacity">
                 <BarChart3 className="h-6 w-6 text-emerald-500" />
-                <span>StockSense</span>
+                <span>HeadlineTrader</span>
               </Link>
 
               <div className="flex gap-2">
@@ -1316,7 +1277,7 @@ export default function Dashboard() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 font-bold text-lg">
                 <BarChart3 className="h-6 w-6 text-emerald-200" />
-                <span>StockSense</span>
+                <span>HeadlineTrader</span>
               </div>
               <p className="text-sm text-emerald-100">
                 AI-powered portfolio optimization based on real-time news analysis.
@@ -1370,7 +1331,7 @@ export default function Dashboard() {
           <div className="border-t border-emerald-400 mt-8 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-sm text-emerald-100">
-                © 2025 StockSense. All rights reserved.
+                © 2025 HeadlineTrader. All rights reserved.
               </p>
               <div className="flex space-x-4 mt-4 md:mt-0">
                 <a href="#" className="text-sm text-emerald-100 hover:text-white transition-colors">Security</a>

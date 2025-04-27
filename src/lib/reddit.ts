@@ -53,7 +53,7 @@ export async function fetchRedditPosts(company: string, limit: number = 100): Pr
             t: 'year'
           },
           headers: {
-            'User-Agent': 'StockSense/1.0'
+            'User-Agent': '/1.0'
           }
         }
       );

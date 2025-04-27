@@ -2,6 +2,20 @@
 
 import { TPortfolioData } from "@/app/dashboard/page";
 
+interface StockHistory {
+  date: string;
+  price: number;
+}
+
+interface AlpacaPosition {
+  symbol: string;
+  qty: string;
+  current_price: string;
+  avg_entry_price: string;
+  change_today: string;
+  market_value: string;
+}
+
 export async function fetchPositions(): Promise<TPortfolioData[]> {
   if (!process.env.NEXT_PUBLIC_ALPACA_KEY || !process.env.NEXT_PUBLIC_ALPACA_SECRET) {
     console.log(process.env.NEXT_PUBLIC_ALPACA_KEY, process.env.NEXT_PUBLIC_ALPACA_SECRET)
@@ -10,8 +24,8 @@ export async function fetchPositions(): Promise<TPortfolioData[]> {
   const response = await fetch('https://paper-api.alpaca.markets/v2/positions', {
     method: 'GET',
     headers: {
-      'APCA-API-KEY-ID': process.env.NEXT_PUBLIC_ALPACA_KEY ,
-      'APCA-API-SECRET-KEY': process.env.NEXT_PUBLIC_ALPACA_SECRET ,
+      'APCA-API-KEY-ID': process.env.NEXT_PUBLIC_ALPACA_KEY,
+      'APCA-API-SECRET-KEY': process.env.NEXT_PUBLIC_ALPACA_SECRET,
       'accept': 'application/json',
     },
   })
@@ -22,7 +36,7 @@ export async function fetchPositions(): Promise<TPortfolioData[]> {
   }
 
   const positionsData = await response.json();
-  const fetchStockHistory = async (symbol: string, isCrypto: boolean): Promise<any[]> => {
+  const fetchStockHistory = async (symbol: string, isCrypto: boolean): Promise<StockHistory[]> => {
     let historyResponse = undefined
     const end = new Date().toISOString();
     const start = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
@@ -52,36 +66,41 @@ export async function fetchPositions(): Promise<TPortfolioData[]> {
           'accept': 'application/json',
         },
       });
-  
-      if (!historyResponse.ok) {
-        console.error(`Failed to fetch history for ${symbol}:`, historyResponse.status, historyResponse.statusText);
-        return [];
-      }
     }
 
-    const results = (await historyResponse.json()).bars[symbol]?.map((entry: any) => ({
-      date: entry.t,
-      price: entry.c
+    if (!historyResponse?.ok) {
+      console.error(`Failed to fetch history for ${symbol}:`, historyResponse?.status, historyResponse?.statusText);
+      return [];
+    }
+
+    const historyData = await historyResponse.json();
+    const bars = isCrypto ? historyData.bars[symbol] : historyData.bars;
+    
+    return bars.map((bar: { t: string; c: number }) => ({
+      date: bar.t,
+      price: bar.c,
     }));
-    return results
   };
 
-  const positions: TPortfolioData[] = await Promise.all(positionsData.map(async (position: any) => {
-    const history = await fetchStockHistory(position.symbol, position.asset_class == "crypto");
-    const newPosition = {
-      symbol: position.symbol,
-      name: position.name ?? position.symbol,
-      shares: parseFloat(position.qty),
-      avgPrice: parseFloat(position.avg_entry_price),
-      currentPrice: parseFloat(position.current_price),
-      change: parseFloat(position.change_today),
-      changePercent: parseFloat(position.unrealized_plpc),
-      value: parseFloat(position.market_value),
-      history: history,
-      assetClass: position.asset_class,
-    };
-    return newPosition
-  }));
+  const positions: TPortfolioData[] = await Promise.all(
+    positionsData.map(async (position: AlpacaPosition) => {
+      const isCrypto = position.symbol.toLowerCase().endsWith('usd');
+      const history = await fetchStockHistory(position.symbol, isCrypto);
+      
+      return {
+        symbol: position.symbol,
+        name: position.symbol,
+        shares: parseFloat(position.qty),
+        avgPrice: parseFloat(position.avg_entry_price),
+        currentPrice: parseFloat(position.current_price),
+        change: parseFloat(position.change_today),
+        changePercent: (parseFloat(position.change_today) / parseFloat(position.current_price)) * 100,
+        value: parseFloat(position.market_value),
+        history,
+        assetClass: isCrypto ? 'crypto' : 'stock',
+      };
+    })
+  );
 
-  return positions
+  return positions;
 }
