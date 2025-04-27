@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link"
 import { ArrowRight, BarChart3, LineChart, Newspaper, Zap } from "lucide-react"
 
@@ -12,14 +13,6 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 font-bold text-xl">
               <BarChart3 className="h-6 w-6 text-green-600" />
               <span>StockSense</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/sign-in">
-                <Button variant="outline">Sign In</Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button className="bg-green-600 hover:bg-green-700">Sign Up</Button>
-              </Link>
             </div>
           </div>
         </div>
@@ -38,17 +31,12 @@ export default function LandingPage() {
                   recommendations.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Link href="/sign-up">
+                  <a href="/auth/login?returnTo=/dashboard">
                     <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 text-lg">
                       Get Started
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
-                  </Link>
-                  <Link href="/dashboard">
-                    <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
-                      View Demo
-                    </Button>
-                  </Link>
+                  </a>
                 </div>
               </div>
               <div className="hidden md:block">

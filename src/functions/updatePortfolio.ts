@@ -1,11 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: "AIzaSyCsGUZo6a-KINcOFzb-xzW8vJAwh5-LK2o" }); // please dont steal our api key please, 
 
 export async function updatePortfolio() {
-  const alpacaKey = "PKLVAN699RIK3VEKWHQ9"
-  const alpacaSecret = "nNR1mUwdysiiiCGfkYVkeEa3VLj9JEicwzRjKWfz"
+  const alpacaKey = process.env.ALPACA_KEY;
+  const alpacaSecret = process.env.ALPACA_SECRET;
+  const geminiKey = process.env.GEMINI_KEY;
 
+  if (!alpacaKey || !alpacaSecret || !geminiKey) {
+    return;
+  }
+
+  const ai = new GoogleGenAI({ apiKey: geminiKey }); 
+  
   try {
     const portfolioResponse = await fetch('https://paper-api.alpaca.markets/v2/positions', {
       headers: {

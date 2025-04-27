@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { ArrowDown, ArrowUp, BarChart3, RefreshCw, Newspaper, Zap, TrendingUp, LogOut } from "lucide-react"
@@ -526,6 +526,7 @@ const performanceData = portfolioData[0].history.map((entry, index) => {
 })
 
 export default function Dashboard() {
+
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [showAnalysisComplete, setShowAnalysisComplete] = useState(false)
 
@@ -560,12 +561,12 @@ export default function Dashboard() {
                 <ArrowUp className="mr-1 h-3 w-3" />
                 <span>5.2%</span>
               </div>
-              <Link href="/sign-in">
-                <Button variant="outline" size="sm" className="ml-4">
+              <a href="/auth/logout" className="ml-4">
+                <Button variant="outline" size="sm">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -578,13 +579,16 @@ export default function Dashboard() {
               <Zap className="h-4 w-4 text-green-600" />
               <AlertTitle className="text-green-600">Analysis Complete</AlertTitle>
               <AlertDescription>
-                Your portfolio has been reanalyzed based on the latest news. We've identified 5 positive and 1 negative
-                impact.
+                Your portfolio has been reanalyzed based on the latest news.
               </AlertDescription>
             </Alert>
           )}
 
-          <div className="mb-12 text-center bg-white border rounded-xl py-10 space-y-2">
+          <div className="mb-12 text-center bg-white border rounded-xl py-10 space-y-2 flex flex-col items-center">
+            <h2 className="text-2xl font-bold flex items-center">
+              Analyze the current news and let Gemini AI automatically update your portfolio
+            </h2>
+            <div className="text-sm mb-4 ">Experience the power of Gemini AI as it intelligently analyzes the web and optimizes your stock trades.</div>
             <Button
               onClick={handleReanalyze}
               disabled={isAnalyzing}
@@ -599,19 +603,20 @@ export default function Dashboard() {
               ) : (
                 <>
                   <Zap className="mr-2 h-5 w-5" />
-                  Optimize Portfolio from News
+                  Reupdate Portfolio from News
                 </>
               )}
             </Button>
-            <div className="text-sm text-muted-foreground ">Analyze the current news and let Gemini AI automatically update your portfolio.</div>
+            <div className="text-sm text-muted-foreground ">Last reupdated: 4/27/25 - 12:32am</div>
           </div>
 
           <div className="mb-12">
-            <div className="flex items-center mb-6">
+            <div className="flex mb-6 flex-col items-start">
               <h2 className="text-2xl font-bold flex items-center">
                 <TrendingUp className="mr-2 h-5 w-5 text-green-600" />
                 Portfolio Overview
               </h2>
+              <div className="text-muted-foreground text-sm">A comprehensive summary of the performance of your owned stocks and the overall health of your investment portfolio.</div>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -663,48 +668,50 @@ export default function Dashboard() {
           </div>
 
           <div className="mb-12">
-            <div className="flex items-center mb-6">
+            <div className="flex mb-6 flex-col items-start">
               <h2 className="text-2xl font-bold flex items-center">
                 <Newspaper className="mr-2 h-5 w-5 text-green-600" />
                 Latest News Sources
               </h2>
+              <div className="text-muted-foreground text-sm">Sources utilized by Gemini AI today to inform its stock purchases.</div>
             </div>
 
-            <Card className="shadow-sm">
-              <CardContent className="p-6">
-                <ScrollArea className="w-full whitespace-nowrap">
-                  <div className="flex space-x-4 pb-4">
+            <Card className="shadow-sm py-0 rounded-3xl">
+              <CardContent className="p-6 pr-0">
+                <ScrollArea className="w-full whitespace-nowrap relative">
+                  <div className="absolute inset-y-0 right-0 w-1/12 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
+                  <div className="flex space-x-4">
                     {newsSources.map((news) => (
                       <Card
                         key={news.id}
                         className="w-[350px] p-0 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow gap-0"
                       >
-                        <CardHeader className="p-4  bg-gray-50 border-b">
-                          <div className="flex justify-between items-start overflow-hidden">
-                            <CardTitle className="text-base truncate">{news.title}</CardTitle>
-                          </div>
-                        </CardHeader>
+                        <div className="rounded-t-xl bg-gray-50 border-b p-4">
+                          <div className="text-base font-semibold line-clamp-2">{news.title}</div>
+                        </div>
                         <CardContent className="p-4 flex flex-col gap-2">
                           <div className="text-sm text-muted-foreground">
                             {news.source} • {news.date}
                           </div>
-                          <div className="flex gap-2 flex-wrap">
-                            {news.stocks.map((stock) => (
-                              <Badge key={stock} variant="secondary">
-                                {stock}
+                          <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              {news.stocks.map((stock) => (
+                                <Badge key={stock} variant="secondary">
+                                  {stock}
+                                </Badge>
+                              ))}
+                            </div>
+                            <Badge
+                                variant="outline"
+                                className={
+                                  news.impact === "positive"
+                                    ? "bg-green-50 text-green-700 border-green-200 whitespace-nowrap flex-shrink-0"
+                                    : "bg-red-50 text-red-700 border-red-200 whitespace-nowrap flex-shrink-0"
+                                }
+                              >
+                                {news.impact === "positive" ? "Positive" : "Negative"}
                               </Badge>
-                            ))}
                           </div>
-                          <Badge
-                              variant="outline"
-                              className={
-                                news.impact === "positive"
-                                  ? "bg-green-50 text-green-700 border-green-200 whitespace-nowrap flex-shrink-0"
-                                  : "bg-red-50 text-red-700 border-red-200 whitespace-nowrap flex-shrink-0"
-                              }
-                            >
-                              {news.impact === "positive" ? "Positive" : "Negative"}
-                            </Badge>
                         </CardContent>
                       </Card>
                     ))}
@@ -717,10 +724,10 @@ export default function Dashboard() {
 
           <SentimentAnalysis posts={redditPosts} />
 
-          <Card className="shadow-sm mb-8">
-            <CardHeader className="bg-gray-50 border-b">
+          <Card className="shadow-sm mb-8 py-0">
+            <CardHeader className="bg-gray-50 border-b p-6 rounded-t-xl">
               <CardTitle>Portfolio Performance</CardTitle>
-              <CardDescription>Overall portfolio value trend over time</CardDescription>
+              <CardDescription>Trend of overall portfolio value over time</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="h-[400px]">
@@ -758,6 +765,61 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+
+          <div className="mb-12">
+            <div className="flex mb-6 flex-col items-start">
+              <h2 className="text-2xl font-bold flex items-center">
+                <Newspaper className="mr-2 h-5 w-5 text-green-600" />
+                Latest News Sources
+              </h2>
+              <div className="text-muted-foreground text-sm">Sources utilized by Gemini AI today to inform its stock purchases.</div>
+            </div>
+
+            <Card className="shadow-sm py-0 rounded-3xl">
+              <CardContent className="p-6 pr-0">
+                <ScrollArea className="w-full whitespace-nowrap relative px-2">
+                  <div className="absolute inset-y-0 right-0 w-1/12 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
+                  <div className="flex space-x-4">
+                    {newsSources.map((news) => (
+                      <Card
+                        key={news.id}
+                        className="w-[350px] p-0 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow gap-0"
+                      >
+                        <div className="rounded-t-xl bg-gray-50 border-b p-4">
+                          <div className="text-base font-semibold line-clamp-2">{news.title}</div>
+                        </div>
+                        <CardContent className="p-4 flex flex-col gap-2">
+                          <div className="text-sm text-muted-foreground">
+                            {news.source} • {news.date}
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              {news.stocks.map((stock) => (
+                                <Badge key={stock} variant="secondary">
+                                  {stock}
+                                </Badge>
+                              ))}
+                            </div>
+                            <Badge
+                                variant="outline"
+                                className={
+                                  news.impact === "positive"
+                                    ? "bg-green-50 text-green-700 border-green-200 whitespace-nowrap flex-shrink-0"
+                                    : "bg-red-50 text-red-700 border-red-200 whitespace-nowrap flex-shrink-0"
+                                }
+                              >
+                                {news.impact === "positive" ? "Positive" : "Negative"}
+                              </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
 
